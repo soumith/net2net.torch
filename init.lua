@@ -29,62 +29,7 @@ n2n.wider = function(net, pos1, pos2, newWidth)
    local w2 = m2.weight
    local b1 = m1.bias
 
-   if torch.type(m1) == 'nn.Linear' then
-      assert(w2:size(2) == w1:size(1), 'failed sanity check')
-      assert(newWidth > w1:size(1), 'new width should be greater than old width')
-
-      local oldWidth = w2:size(2)
-
-      local nw1 = m1.weight.new() -- new weight1
-      nw1:resize(newWidth, w1:size(2))
-
-      local nw2 = m2.weight.new() -- new weight2
-      nw2:resize(w2:size(1), newWidth)
-
-      local nb1 = m1.bias.new()
-      nb1:resize(newWidth)
-
-      w2 = w2:t()
-      nw2 = nw2:t()
-
-      -- copy the original weights over
-      nw1:narrow(1, 1, oldWidth):copy(w1)
-      nw2:narrow(1, 1, oldWidth):copy(w2)
-
-      nb1:narrow(1, 1, oldWidth):copy(b1)
-
-      -- now do random selection on new weights
-      local tracking = {}
-      for i = oldWidth + 1, newWidth do
-	 local j = torch.random(1, oldWidth)
-	 tracking[j] = tracking[j] or {j}
-	 table.insert(tracking[j], i)
-
-	 -- copy the weights
-	 nw1:select(1, i):copy(w1:select(1, j))
-	 nw2:select(1, i):copy(w2:select(1, j))
-
-	 nb1[i] = b1[j]
-      end
-
-      -- renormalize the weights
-      for k, v in pairs(tracking) do
-	 for kk, vv in ipairs(v) do
-	    nw2[vv]:div(#v)
-	 end
-      end
-
-      w2 = w2:t()
-      nw2 = nw2:t()
-
-      m1.weight = nw1
-      m2.weight = nw2
-      m1.gradWeight:resizeAs(m1.weight)
-      m2.gradWeight:resizeAs(m2.weight)
-
-      m1.bias = nb1
-      m1.gradBias:resizeAs(m1.bias)
-   elseif torch.type(m1):find('SpatialConvolution') then
+   if torch.type(m1):find('SpatialConvolution') or torch.type(m1) == 'nn.Linear' then
 
       if torch.type(m1) == 'nn.SpatialConvolutionMM' then
 	 w1 = w1:view(w1:size(1), m1.nInputPlane, m1.kH, m1.kW)
@@ -97,10 +42,16 @@ n2n.wider = function(net, pos1, pos2, newWidth)
       local oldWidth = w2:size(2)
 
       local nw1 = m1.weight.new() -- new weight1
-      nw1:resize(newWidth, w1:size(2), w1:size(3), w1:size(4))
-
       local nw2 = m2.weight.new() -- new weight2
-      nw2:resize(w2:size(1), newWidth, w2:size(3), w2:size(4))
+      
+      if w1:dim() == 4 then
+	 nw1:resize(newWidth, w1:size(2), w1:size(3), w1:size(4))
+	 nw2:resize(w2:size(1), newWidth, w2:size(3), w2:size(4))
+      else
+	 nw1:resize(newWidth, w1:size(2))
+	 nw2:resize(w2:size(1), newWidth)
+      end
+      
 
       local nb1 = m1.bias.new()
       nb1:resize(newWidth)
