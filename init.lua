@@ -215,28 +215,3 @@ n2n.deeper = function(net, pos, nonlin)
 end
 
 return n2n
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
