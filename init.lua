@@ -100,11 +100,11 @@ n2n.wider = function(net, pos1, pos2, newWidth)
       m1.weight = nw1
       m2.weight = nw2
 
-      m1.gradWeight:resizeAs(m1.weight)
-      m2.gradWeight:resizeAs(m2.weight)
+      m1.gradWeight = m1.weight:clone():zero()
+      m2.gradWeight = m2.weight:clone():zero()
 
       m1.bias = nb1
-      m1.gradBias:resizeAs(m1.bias)
+      m1.gradBias = m1.bias:clone():zero()
       
    else
       error('Only nn.Linear and *.SpatialConvolution* supported')
