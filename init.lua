@@ -19,7 +19,6 @@ n2n.wider = function(net, pos1, pos2, newWidth)
    local bnorm
    for i=pos1,pos2 do
       if torch.type(net:get(i)):find('BatchNormalization') then
-         print(bnorm)
          if not bnorm then
             bnorm = net:get(i)
          else
@@ -219,7 +218,7 @@ n2n.deeper = function(net, pos, nonlin, bnormFlag)
 
    if bnormFlag then
       if net.modules[pos].output then
-         local input = net.modules[pos].output
+         local input = net.modules[pos].output:float()
          bnorm:forward(input);
          bnorm.weight = torch.cinv(bnorm.save_std)
          bnorm.bias = bnorm.save_mean
