@@ -235,7 +235,12 @@ n2n.deeper = function(net, pos, nonlin, bnormFlag)
    end
    s:add(nonlin)
    s:add(m2)
-   net.modules[pos] = s
+
+   net:remove(pos)
+   for i=#s,1,-1 do
+      net:insert(s:get(i),pos)
+   end
+   -- net.modules[pos] = s
    return net
 end
 
