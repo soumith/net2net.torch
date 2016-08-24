@@ -19,7 +19,6 @@ n2n.wider = function(net, pos1, pos2, newWidth)
    local bnorm
    for i=pos1,pos2 do
       if torch.type(net:get(i)):find('BatchNormalization') then
-         print(bnorm)
          if not bnorm then
             bnorm = net:get(i)
          else
@@ -219,7 +218,7 @@ n2n.deeper = function(net, pos, nonlin, bnormFlag)
 
    if bnormFlag then
       if net.modules[pos].output then
-         local input = net.modules[pos].output
+         local input = net.modules[pos].output:clone():type(torch.getdefaulttensortype())
          bnorm:forward(input);
          bnorm.weight = torch.cinv(bnorm.save_std)
          bnorm.bias = bnorm.save_mean
@@ -235,7 +234,17 @@ n2n.deeper = function(net, pos, nonlin, bnormFlag)
    end
    s:add(nonlin)
    s:add(m2)
-   net.modules[pos] = s
+
+   -- if base network is sequential, insert individual layers
+   -- otherwise insert a sub-network
+   if torch.type(net):find('Sequential') then
+      net:remove(pos)
+      for i=#s,1,-1 do
+         net:insert(s:get(i),pos)
+      end
+   else
+      net.modules[pos] = s
+   end
    return net
 end
 
